@@ -36,6 +36,7 @@ jobs:
         run: |
           rustup toolchain install 1.94.0 --profile minimal
           rustup default 1.94.0
+          rustup component add rustfmt --toolchain 1.94.0
           sudo apt-get update
           sudo apt-get install --yes clang lld libclang-dev just
           cargo install --locked --version 0.1.14 cargo-hyperlight
