@@ -7,5 +7,8 @@ publish = false
 [lib]
 crate-type = ["staticlib"]
 
-[dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 hyperlight-host = { git = "https://github.com/cataggar/hyperlight", rev = "89792856686085ddb12b11b395a1d543ccd8fb07", default-features = false, features = ["kvm"] }
+
+[target.'cfg(all(target_os = "macos", target_arch = "aarch64"))'.dependencies]
+hyperlight-host = { git = "https://github.com/cataggar/hyperlight", rev = "89792856686085ddb12b11b395a1d543ccd8fb07", default-features = false, features = ["hvf"] }
