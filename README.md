@@ -10,7 +10,7 @@ The package provides:
 - sandbox snapshot and restore support.
 
 The current implementation pins `cataggar/hyperlight` commit
-`643938e4741c1c7049386d1800013c21cdf617e4`, which contains the runtime-defined
+`89792856686085ddb12b11b395a1d543ccd8fb07`, which contains the runtime-defined
 host API and ownership-safe guest C API needed by these bindings.
 
 ## Host API
@@ -82,7 +82,7 @@ Runnable guest examples additionally require Clang/LLVM,
 
 ```console
 git clone https://github.com/cataggar/hyperlight hyperlight
-git -C hyperlight checkout 643938e4741c1c7049386d1800013c21cdf617e4
+git -C hyperlight checkout 89792856686085ddb12b11b395a1d543ccd8fb07
 cargo install --locked --version 0.1.14 cargo-hyperlight
 (cd hyperlight/src/hyperlight_guest_capi && cargo hyperlight build --release)
 

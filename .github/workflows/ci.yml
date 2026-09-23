@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: cataggar/hyperlight
-          ref: 643938e4741c1c7049386d1800013c21cdf617e4
+          ref: 89792856686085ddb12b11b395a1d543ccd8fb07
           path: hyperlight
           submodules: recursive
 
