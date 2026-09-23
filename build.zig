@@ -14,11 +14,23 @@ fn linkHostBridge(
         module.linkSystemLibrary("pthread", .{});
         module.linkSystemLibrary("rt", .{});
         module.linkSystemLibrary("util", .{});
+    } else if (target.result.os.tag == .macos) {
+        module.linkFramework("Hypervisor", .{});
+        module.linkSystemLibrary("iconv", .{});
+        module.linkSystemLibrary("m", .{});
     }
 }
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
+    if (target.result.os.tag == .macos and target.result.cpu.arch != .aarch64) {
+        @panic("Intel macOS is unsupported; build natively on Apple Silicon (aarch64-macos)");
+    }
+    if (target.result.os.tag != b.graph.host.result.os.tag or
+        target.result.cpu.arch != b.graph.host.result.cpu.arch)
+    {
+        @panic("Host builds require the native OS and architecture; -Dtarget does not cross-compile the Rust bridge");
+    }
     const optimize = b.standardOptimizeOption(.{});
     const cargo = b.option([]const u8, "cargo", "Path to Cargo") orelse "cargo";
     const lld = b.option([]const u8, "lld", "Path to ld.lld") orelse "ld.lld";
@@ -51,6 +63,16 @@ pub fn build(b: *std.Build) void {
     tests.step.dependOn(&build_bridge.step);
     linkHostBridge(tests.root_module, b, target);
     const run_tests = b.addRunArtifact(tests);
+    if (target.result.os.tag == .macos) {
+        const sign_tests = b.addSystemCommand(&.{
+            b.pathFromRoot("tools/run-host.sh"),
+            "--sign-only",
+        });
+        sign_tests.addFileArg(tests.getEmittedBin());
+        sign_tests.addFileInput(b.path("tools/run-host.sh"));
+        sign_tests.addFileInput(b.path("tools/macos-entitlements.plist"));
+        run_tests.step.dependOn(&sign_tests.step);
+    }
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_tests.step);
 
@@ -62,6 +84,12 @@ pub fn build(b: *std.Build) void {
         "bridge/Cargo.toml",
     });
     test_bridge.setEnvironmentVariable("CARGO_TARGET_DIR", cargo_target_dir);
+    if (target.result.os.tag == .macos) {
+        test_bridge.setEnvironmentVariable(
+            "CARGO_TARGET_AARCH64_APPLE_DARWIN_RUNNER",
+            b.pathFromRoot("tools/run-host.sh"),
+        );
+    }
     const bridge_test_step = b.step("bridge-test", "Run Rust bridge tests");
     bridge_test_step.dependOn(&test_bridge.step);
 
