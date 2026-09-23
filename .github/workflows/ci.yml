@@ -60,7 +60,30 @@ jobs:
       - name: Build existing C and Rust guests
         working-directory: hyperlight
         run: |
-          just build-c-guests release
+          mkdir -p src/tests/c_guests/c_simpleguest/out/release
+          clang -c \
+            -nostdlibinc \
+            --target=x86_64-unknown-linux-none \
+            -fno-stack-protector \
+            -fstack-clash-protection \
+            -mstack-probe-size=4096 \
+            -fPIC \
+            -O3 \
+            src/tests/c_guests/c_simpleguest/main.c \
+            -I src/hyperlight_guest_capi/include \
+            -I src/hyperlight_libc/third_party/picolibc/libc/include \
+            -I src/hyperlight_libc/third_party/picolibc/libc/stdio \
+            -I src/hyperlight_libc/include \
+            -o src/tests/c_guests/c_simpleguest/out/release/main.o
+          ld.lld \
+            --entry entrypoint \
+            --nostdlib \
+            -pie \
+            --no-dynamic-linker \
+            -o src/tests/c_guests/c_simpleguest/out/release/simpleguest \
+            src/tests/c_guests/c_simpleguest/out/release/main.o \
+            -L target/x86_64-hyperlight-none/release \
+            -l hyperlight_guest_capi
           (cd src/tests/rust_guests && cargo hyperlight build -p simpleguest --release)
 
       - name: Enable KVM
