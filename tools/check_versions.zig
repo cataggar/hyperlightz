@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const zig_version = "0.16.0";
-const hyperlight_revision = "643938e4741c1c7049386d1800013c21cdf617e4";
+const hyperlight_revision = "89792856686085ddb12b11b395a1d543ccd8fb07";
 
 const Check = struct {
     path: []const u8,
