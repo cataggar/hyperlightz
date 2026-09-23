@@ -21,6 +21,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const cargo = b.option([]const u8, "cargo", "Path to Cargo") orelse "cargo";
+    const lld = b.option([]const u8, "lld", "Path to ld.lld") orelse "ld.lld";
     const guest_capi = b.option(
         []const u8,
         "guest-capi",
@@ -125,6 +126,9 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/root.zig"),
         .target = guest_target,
         .optimize = .ReleaseSmall,
+        .stack_protector = false,
+        .pic = true,
+        .red_zone = false,
     });
     const guest_examples_step = b.step(
         "guest-check",
@@ -143,6 +147,9 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path(example[1]),
             .target = guest_target,
             .optimize = .ReleaseSmall,
+            .stack_protector = false,
+            .pic = true,
+            .red_zone = false,
         });
         example_module.addImport("hyperlight", guest_api);
         const object = b.addObject(.{
@@ -152,21 +159,21 @@ pub fn build(b: *std.Build) void {
         guest_examples_step.dependOn(&object.step);
 
         if (guest_capi) |archive| {
-            const linked_module = b.createModule(.{
-                .root_source_file = b.path(example[1]),
-                .target = guest_target,
-                .optimize = .ReleaseSmall,
+            const link = b.addSystemCommand(&.{
+                lld,
+                "--entry",
+                "entrypoint",
+                "--nostdlib",
+                "-pie",
+                "--no-dynamic-linker",
+                "-o",
             });
-            linked_module.addImport("hyperlight", guest_api);
-            linked_module.addObjectFile(.{ .cwd_relative = archive });
-            const executable = b.addExecutable(.{
-                .name = example[0],
-                .root_module = linked_module,
-            });
-            executable.entry = .{ .symbol_name = "entrypoint" };
-            executable.pie = true;
-            linked_guest_examples_step.dependOn(&executable.step);
-            b.installArtifact(executable);
+            const executable = link.addOutputFileArg(example[0]);
+            link.addArtifactArg(object);
+            link.addFileArg(.{ .cwd_relative = archive });
+            linked_guest_examples_step.dependOn(&link.step);
+            const install = b.addInstallBinFile(executable, example[0]);
+            b.getInstallStep().dependOn(&install.step);
         }
     }
 
