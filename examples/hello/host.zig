@@ -10,6 +10,16 @@ fn stringLength(value: hyperlight.String) u64 {
     return value.bytes.len;
 }
 
+fn chunksEqual(chunks: []const []u8, expected: []const u8) bool {
+    var offset: usize = 0;
+    for (chunks) |bytes| {
+        if (bytes.len > expected.len - offset) return false;
+        if (!std.mem.eql(u8, bytes, expected[offset..][0..bytes.len])) return false;
+        offset += bytes.len;
+    }
+    return offset == expected.len;
+}
+
 pub fn main(init: std.process.Init) !void {
     const args = try init.minimal.args.toSlice(init.arena.allocator());
     if (args.len != 2) return error.ExpectedGuestPath;
@@ -53,9 +63,7 @@ pub fn main(init: std.process.Init) !void {
         string_length != 5 or
         !std.mem.eql(u8, greeting.bytes, "hello from Zig") or
         !std.mem.eql(u8, echoed_bytes.bytes, "bytes") or
-        echoed_chunks.chunks.len != 2 or
-        !std.mem.eql(u8, echoed_chunks.chunks[0], "first") or
-        !std.mem.eql(u8, echoed_chunks.chunks[1], "second"))
+        !chunksEqual(echoed_chunks.chunks, "firstsecond"))
     {
         return error.UnexpectedResult;
     }
