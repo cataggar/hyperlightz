@@ -1,0 +1,11 @@
+[package]
+name = "hyperlightz-bridge"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+hyperlight-host = { git = "https://github.com/cataggar/hyperlight", rev = "643938e4741c1c7049386d1800013c21cdf617e4", default-features = false, features = ["kvm"] }
